@@ -60,6 +60,8 @@ class DataSet {
    * @param column
    */
   groupBy = (column) => {
+    // TODO allow to group based on a condition?
+    // for example, what if I want to see all states that had more than 100 cases after a certain date
     const result = {};
     this.data.forEach(row => {
       const group = row[column];
@@ -71,9 +73,36 @@ class DataSet {
     });
     return result;
   }
+  
+  operatorMap = {
+    '>': (row, column, comparator) => row[column] > comparator,
+    '>=': (row, column, comparator) => row[column] >= comparator,
+    '<': (row, column, comparator) => row[column] < comparator,
+    '<=': (row, column, comparator) => row[column] <= comparator,
+    '===': (row, column, comparator) => row[column] === comparator,
+    '!==': (row, column, comparator) => row[column] !== comparator,
+  }
+  
+  /**
+   *
+   * @param { Object } condition containing keys: 'column', 'operator', 'comparator'
+   */
+  filter = ({ column, operator, comparator }) => {
+    if (!column || !operator || !comparator) {
+      throw new Error('invalid input to filter');
+    }
+    const result = [];
+    this.data.forEach(row => {
+      const match = this.operatorMap[operator](row, column, comparator);
+      if (match) {
+        result.push(row);
+      }
+    });
+    return result;
+  }
 }
 
 export const states = new DataSet(stateData, 'state');
-console.log('state level data grouped by state', states.groupBy('state'));
+console.log('state level data filtered by state', states.filter({ column: 'fips', operator: '===', comparator: '53' }));
 export const counties = new DataSet(countyData, 'county');
-console.log('county level data grouped by state', counties.groupBy('county'));
+console.log('county level data grouped by fips', counties.groupBy('fips'));
