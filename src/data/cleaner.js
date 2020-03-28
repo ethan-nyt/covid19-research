@@ -1,0 +1,79 @@
+import stateData from './states';
+import countyData from './counties';
+
+const removeSpaces = str => str.split('').filter(c => c !== ' ').join('');
+
+// convert the state and county data to an array of objects
+// since this is immutable data, it doesn't need to go in the class.
+
+class DataSet {
+  constructor(dataString, type) {
+    this.data = [];
+  
+    let cols, mod;
+    if (type === 'state') {
+      cols = ['date', 'state', 'fips', 'cases', 'deaths'];
+      mod = 4;
+    } else {
+      cols = ['date', 'county', 'state', 'fips', 'cases', 'deaths'];
+      mod = 5;
+    }
+    const splitArr = dataString.split(',');
+    const arr = [];
+    for (let i = 0; i < splitArr.length; i++) {
+      if (i % mod === 0) {
+        const strToSplit = removeSpaces(splitArr[i]);
+        // cleaning the string lumped the deaths and next date columns together - separate them and insert the correct value.
+        // all dates are 10 characters long
+        const date = strToSplit.slice(-10);
+        const deaths = strToSplit.slice(0, -10);
+        if (deaths !== '') {
+          arr.push(deaths);
+        }
+        if (date !== '') {
+          arr.push(date);
+        }
+      } else {
+        arr.push(splitArr[i]);
+      }
+    }
+    
+    for (let i = 0; i < arr.length; i += cols.length) {
+      const row = cols.reduce((rowObj, column, j) => ({
+        ...rowObj,
+        [column]: arr[i + j],
+      }), {});
+      this.data.push(row);
+    }
+  }
+  
+  /**
+   * Groups an array of objects into a single object with a key for each unique value in the given column
+   *
+   * for example, if this.data = [{ name: 'cat', type: 'animal' }, { name: 'tree', type: 'plant' }, { name: 'dog', type: 'animal' }]
+   * this.groupBy('type')
+   * would return this object:
+   * {
+   *    animal: [{ name: 'cat', type: 'animal' }, { name: 'dog', type: 'animal' }],
+   *    fungus: [{ name: 'mushroom, type: 'fungus' }]
+   * }
+   * @param column
+   */
+  groupBy = (column) => {
+    const result = {};
+    this.data.forEach(row => {
+      const group = row[column];
+      if (result[group]) {
+        result[group].push(row);
+      } else {
+        result[group] = [row];
+      }
+    });
+    return result;
+  }
+}
+
+export const states = new DataSet(stateData, 'state');
+console.log('state level data grouped by state', states.groupBy('state'));
+export const counties = new DataSet(countyData, 'county');
+console.log('county level data grouped by state', counties.groupBy('county'));
