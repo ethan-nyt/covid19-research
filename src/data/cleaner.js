@@ -6,7 +6,7 @@ const removeSpaces = str => str.split('').filter(c => c !== ' ').join('');
 // convert the state and county data to an array of objects
 // since this is immutable data, it doesn't need to go in the class.
 
-class DataSet {
+export default class DataSet {
   constructor(dataString, type) {
     this.data = [];
   
@@ -103,16 +103,26 @@ class DataSet {
   }
   
   /**
-   *
+   * TODO this seems off - aggregating total deaths was 5x actual reported number...
+   * @param { Array } rows the data to iterate
    * @param { String } column the column to aggregate
-   * @param { String } metric one of ['count', 'sum', 'average', 'min', 'max']
+   * @param { String } metric one of ['sum', ...others]
+   * @return { Number } the given column aggregated according to the given metric across the entire data set.
+   * example: aggregate([{ deaths: 1 }, { deaths: 4}, { deaths: 7 }], 'deaths', 'sum') ==> 12
    */
-  aggregate = (column, metric) => {
-  
+  aggregate = (rows, column, metric) => {
+    switch (metric) {
+      case 'sum':
+        return rows.reduce((sum, row) => sum + parseInt(row[column]), 0);
+      case 'average':
+        return rows.reduce((sum, row) => sum + parseInt(row[column]), 0) / rows.length;
+      default:
+        return 0;
+    }
   }
 }
 
 export const states = new DataSet(stateData, 'state');
-console.log('state level data filtered by state and grouped by date', states.groupBy(states.filter({ column: 'fips', operator: '===', comparator: '53' }), 'date'));
+console.log('state data sorted by date:', states.filter({ column: 'state', operator: '===', comparator: 'New York' }).sort((a, b) => a.date - b.date));
 export const counties = new DataSet(countyData, 'county');
-console.log('county level data filtered by NYC county and grouped by date', counties.groupBy(counties.filter({ column: 'county', operator: '===', comparator: 'New York City' }), 'date'));
+
