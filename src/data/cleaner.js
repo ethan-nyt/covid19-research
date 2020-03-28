@@ -55,15 +55,15 @@ class DataSet {
    * would return this object:
    * {
    *    animal: [{ name: 'cat', type: 'animal' }, { name: 'dog', type: 'animal' }],
-   *    fungus: [{ name: 'mushroom, type: 'fungus' }]
+   *    plant: [{ name: 'tree', type: 'plant' }]
    * }
-   * @param column
+   * @param { Array } rows could be this.data, could be some filtered subset of this.data
+   * @param { String } column the column to group by.
+   * @return { Object } the given rows grouped together by the given column
    */
-  groupBy = (column) => {
-    // TODO allow to group based on a condition?
-    // for example, what if I want to see all states that had more than 100 cases after a certain date
+  groupBy = (rows, column) => {
     const result = {};
-    this.data.forEach(row => {
+    rows.forEach(row => {
       const group = row[column];
       if (result[group]) {
         result[group].push(row);
@@ -84,11 +84,12 @@ class DataSet {
   }
   
   /**
-   *
+   * Filters the data array based on a condition.
    * @param { Object } condition containing keys: 'column', 'operator', 'comparator'
+   * @return { Array } all the rows in this.data that match the condition
    */
-  filter = ({ column, operator, comparator }) => {
-    if (!column || !operator || !comparator) {
+  filter = ({ column, operator, comparator = '' }) => {
+    if (!column || !operator) {
       throw new Error('invalid input to filter');
     }
     const result = [];
@@ -100,9 +101,18 @@ class DataSet {
     });
     return result;
   }
+  
+  /**
+   *
+   * @param { String } column the column to aggregate
+   * @param { String } metric one of ['count', 'sum', 'average', 'min', 'max']
+   */
+  aggregate = (column, metric) => {
+  
+  }
 }
 
 export const states = new DataSet(stateData, 'state');
-console.log('state level data filtered by state', states.filter({ column: 'fips', operator: '===', comparator: '53' }));
+console.log('state level data filtered by state and grouped by date', states.groupBy(states.filter({ column: 'fips', operator: '===', comparator: '53' }), 'date'));
 export const counties = new DataSet(countyData, 'county');
-console.log('county level data grouped by fips', counties.groupBy('fips'));
+console.log('county level data filtered by NYC county and grouped by date', counties.groupBy(counties.filter({ column: 'county', operator: '===', comparator: 'New York City' }), 'date'));
